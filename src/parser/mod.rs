@@ -5424,11 +5424,21 @@ impl<'a> Parser<'a> {
             format = Some(self.parse_analyze_format()?);
         }
 
+        let mut timing = true;
+        if self.parse_keyword(Keyword::TIMING) {
+            if let Some(kw) =
+                self.parse_one_of_keywords(&[Keyword::ON, Keyword::TRUE, Keyword::ON, Keyword::OFF])
+            {
+                timing = matches!(kw, Keyword::ON | Keyword::TRUE);
+            }
+        }
+
         match self.maybe_parse(|parser| parser.parse_statement()) {
             Some(Statement::Explain { .. }) | Some(Statement::ExplainTable { .. }) => Err(
                 ParserError::ParserError("Explain must be root of the plan".to_string()),
             ),
             Some(statement) => Ok(Statement::Explain {
+                timing,
                 describe_alias,
                 analyze,
                 verbose,

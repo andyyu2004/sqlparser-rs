@@ -1776,6 +1776,8 @@ pub enum Statement {
         statement: Box<Statement>,
         /// Optional output format of explain
         format: Option<AnalyzeFormat>,
+        /// Include the execution time of each node in the output.
+        timing: bool,
     },
     /// SAVEPOINT -- define a new savepoint within the current transaction
     Savepoint { name: Ident },
@@ -1867,6 +1869,7 @@ impl fmt::Display for Statement {
                 analyze,
                 statement,
                 format,
+                timing,
             } => {
                 if *describe_alias {
                     write!(f, "DESCRIBE ")?;
@@ -1880,6 +1883,10 @@ impl fmt::Display for Statement {
 
                 if *verbose {
                     write!(f, "VERBOSE ")?;
+                }
+
+                if !*timing {
+                    write!(f, "TIMING OFF ")?;
                 }
 
                 if let Some(format) = format {

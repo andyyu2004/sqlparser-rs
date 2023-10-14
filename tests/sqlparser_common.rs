@@ -3346,6 +3346,7 @@ fn run_explain_analyze(
     query: &str,
     expected_verbose: bool,
     expected_analyze: bool,
+    expected_timing: bool,
     expected_format: Option<AnalyzeFormat>,
 ) {
     match verified_stmt(query) {
@@ -3355,10 +3356,12 @@ fn run_explain_analyze(
             verbose,
             statement,
             format,
+            timing,
         } => {
             assert_eq!(verbose, expected_verbose);
             assert_eq!(analyze, expected_analyze);
             assert_eq!(format, expected_format);
+            assert_eq!(timing, expected_timing);
             assert_eq!("SELECT sqrt(id) FROM foo", statement.to_string());
         }
         _ => panic!("Unexpected Statement, must be Explain"),
@@ -3385,23 +3388,32 @@ fn parse_explain_table() {
 #[test]
 fn parse_explain_analyze_with_simple_select() {
     // Describe is an alias for EXPLAIN
-    run_explain_analyze("DESCRIBE SELECT sqrt(id) FROM foo", false, false, None);
+    run_explain_analyze(
+        "DESCRIBE SELECT sqrt(id) FROM foo",
+        false,
+        false,
+        true,
+        None,
+    );
 
-    run_explain_analyze("EXPLAIN SELECT sqrt(id) FROM foo", false, false, None);
+    run_explain_analyze("EXPLAIN SELECT sqrt(id) FROM foo", false, false, true, None);
     run_explain_analyze(
         "EXPLAIN VERBOSE SELECT sqrt(id) FROM foo",
         true,
         false,
+        true,
         None,
     );
     run_explain_analyze(
         "EXPLAIN ANALYZE SELECT sqrt(id) FROM foo",
         false,
         true,
+        true,
         None,
     );
     run_explain_analyze(
         "EXPLAIN ANALYZE VERBOSE SELECT sqrt(id) FROM foo",
+        true,
         true,
         true,
         None,
@@ -3411,11 +3423,13 @@ fn parse_explain_analyze_with_simple_select() {
         "EXPLAIN ANALYZE FORMAT GRAPHVIZ SELECT sqrt(id) FROM foo",
         false,
         true,
+        true,
         Some(AnalyzeFormat::GRAPHVIZ),
     );
 
     run_explain_analyze(
         "EXPLAIN ANALYZE VERBOSE FORMAT JSON SELECT sqrt(id) FROM foo",
+        true,
         true,
         true,
         Some(AnalyzeFormat::JSON),
@@ -3425,7 +3439,16 @@ fn parse_explain_analyze_with_simple_select() {
         "EXPLAIN VERBOSE FORMAT TEXT SELECT sqrt(id) FROM foo",
         true,
         false,
+        true,
         Some(AnalyzeFormat::TEXT),
+    );
+
+    run_explain_analyze(
+        "EXPLAIN ANALYZE VERBOSE TIMING OFF SELECT sqrt(id) FROM foo",
+        true,
+        true,
+        false,
+        None,
     );
 }
 
