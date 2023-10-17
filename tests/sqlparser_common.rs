@@ -4908,10 +4908,10 @@ fn parse_join_syntax_variants() {
 
 #[test]
 fn parse_ctes() {
-    let cte_sqls = vec!["SELECT 1 AS foo", "SELECT 2 AS bar"];
+    let cte_sqls = vec!["SELECT 1 AS foo", "SELECT 2 AS bar", "SELECT 3 AS baz"];
     let with = &format!(
-        "WITH a AS ({}), b AS ({}) SELECT foo + bar FROM a, b",
-        cte_sqls[0], cte_sqls[1]
+        "WITH a AS MATERIALIZED ({}), b AS ({}), c AS NOT MATERIALIZED ({}) SELECT foo + bar FROM a, b",
+        cte_sqls[0], cte_sqls[1], cte_sqls[2]
     );
 
     fn assert_ctes_in_select(expected: &[&str], sel: &Query) {
@@ -4921,8 +4921,10 @@ fn parse_ctes() {
             assert_eq!(
                 if i == 0 {
                     Ident::new("a")
-                } else {
+                } else if i == 1 {
                     Ident::new("b")
+                } else {
+                    Ident::new("c")
                 },
                 alias.name
             );
@@ -5002,6 +5004,7 @@ fn parse_recursive_cte() {
             }],
         },
         query: Box::new(cte_query),
+        materialized: None,
         from: None,
     };
     assert_eq!(with.cte_tables.first().unwrap(), &expected);

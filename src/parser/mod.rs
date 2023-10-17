@@ -5568,6 +5568,13 @@ impl<'a> Parser<'a> {
         let name = self.parse_identifier()?;
 
         let mut cte = if self.parse_keyword(Keyword::AS) {
+            let materialized = if self.parse_keyword(Keyword::NOT) {
+                self.expect_keyword(Keyword::MATERIALIZED)?;
+                Some(false)
+            } else {
+                self.parse_keyword(Keyword::MATERIALIZED).then_some(true)
+            };
+
             self.expect_token(&Token::LParen)?;
             let query = Box::new(self.parse_query()?);
             self.expect_token(&Token::RParen)?;
@@ -5578,11 +5585,20 @@ impl<'a> Parser<'a> {
             Cte {
                 alias,
                 query,
+                materialized,
                 from: None,
             }
         } else {
             let columns = self.parse_parenthesized_column_list(Optional, false)?;
             self.expect_keyword(Keyword::AS)?;
+
+            let materialized = if self.parse_keyword(Keyword::NOT) {
+                self.expect_keyword(Keyword::MATERIALIZED)?;
+                Some(true)
+            } else {
+                self.parse_keyword(Keyword::MATERIALIZED).then_some(true)
+            };
+
             self.expect_token(&Token::LParen)?;
             let query = Box::new(self.parse_query()?);
             self.expect_token(&Token::RParen)?;
@@ -5590,6 +5606,7 @@ impl<'a> Parser<'a> {
             Cte {
                 alias,
                 query,
+                materialized,
                 from: None,
             }
         };

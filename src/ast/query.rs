@@ -376,11 +376,20 @@ pub struct Cte {
     pub alias: TableAlias,
     pub query: Box<Query>,
     pub from: Option<Ident>,
+    pub materialized: Option<bool>,
 }
 
 impl fmt::Display for Cte {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} AS ({})", self.alias, self.query)?;
+        write!(f, "{} AS ", self.alias)?;
+        if let Some(materialized) = self.materialized {
+            if !materialized {
+                write!(f, "NOT ")?;
+            }
+            write!(f, "MATERIALIZED ")?;
+        }
+
+        write!(f, "({})", self.query)?;
         if let Some(ref fr) = self.from {
             write!(f, " FROM {fr}")?;
         }
